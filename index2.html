@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Twibbon Maker — Modern</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body
+  class="bg-gradient-to-br from-slate-100 via-white to-slate-200 min-h-screen flex justify-center items-center font-sans text-gray-800">
+
+  <div class="bg-white shadow-xl rounded-2xl p-6 w-full max-w-3xl space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-center gap-3">
+      <img id="logo" src="assets/logo.png" alt="Logo" class="w-10 h-10 object-contain" />
+      <h1 class="text-2xl font-bold">Twibbon Maker Modern</h1>
+    </div>
+
+    <p class="text-center text-gray-500 text-sm">
+      Upload foto → pilih twibbon → atur rasio → klik <b>Generate</b> untuk hasil akhir ✨
+    </p>
+
+
+
+    <!-- Preview -->
+    <div>
+      <label class="block text-sm text-gray-600 mb-2">Preview:</label>
+      <canvas id="canvas" width="800" height="800" class="w-full bg-slate-900 rounded-xl"></canvas>
+    </div>
+
+    <!-- Controls -->
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <label
+        class="cursor-pointer bg-slate-100 hover:bg-blue-50 border border-slate-200 text-center py-2 rounded-lg text-sm font-medium transition">
+        Upload / Kamera
+        <input id="imgInput" type="file" accept="image/*" class="hidden">
+      </label>
+
+      <select id="overlaySelect"
+        class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400">
+        <option value="">Pilih Twibbon</option>
+        <option value="assets/twibbon1.png">Twibbon 1</option>
+        <option value="assets/twibbon2.png">Twibbon 2</option>
+        <option value="assets/twibbon3.png">Twibbon 3</option>
+      </select>
+
+      <select id="ratioSelect"
+        class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400">
+        <option value="1">1:1 Kotak</option>
+        <option value="4/3">4:3</option>
+        <option value="3/4">3:4</option>
+        <option value="16/9">16:9</option>
+        <option value="9/16">9:16</option>
+      </select>
+
+      <input id="customSize" value="500" type="number" placeholder="Ukuran (px)" min="400" max="2000"
+        class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400" />
+
+      <button id="reset"
+        class="col-span-2 md:col-span-1 bg-slate-100 hover:bg-slate-200 text-gray-600 py-2 rounded-lg text-sm font-medium transition">
+        Reset
+      </button>
+    </div>
+
+    <!-- Action Button -->
+    <div class="text-center">
+      <button id="generate"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition">
+        🎨 Generate & Download
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let userImg = null, overlayImg = null;
+    let offset = { x: 0, y: 0 }, scale = 1, dragging = false, last = { x: 0, y: 0 };
+    const imgInput = document.getElementById('imgInput');
+    const overlaySelect = document.getElementById('overlaySelect');
+    const ratioSelect = document.getElementById('ratioSelect');
+    const customSize = document.getElementById('customSize');
+    const generateBtn = document.getElementById('generate');
+    const resetBtn = document.getElementById('reset');
+
+    function clearCanvas() { ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+    function redraw() {
+      clearCanvas();
+      if (userImg) {
+        const cw = canvas.width, ch = canvas.height, iw = userImg.width, ih = userImg.height;
+        const r = Math.max(cw / iw, ch / ih);
+        const drawW = iw * r * scale, drawH = ih * r * scale;
+        const dx = (cw - drawW) / 2 + offset.x, dy = (ch - drawH) / 2 + offset.y;
+        ctx.drawImage(userImg, dx, dy, drawW, drawH);
+      }
+      if (overlayImg) { ctx.drawImage(overlayImg, 0, 0, canvas.width, canvas.height); }
+    }
+
+    function setCanvasRatio() {
+      const ratio = eval(ratioSelect.value);
+      const size = parseInt(customSize.value) || 800;
+      canvas.width = size;
+      canvas.height = size / ratio;
+      redraw();
+    }
+
+    ratioSelect.addEventListener('change', setCanvasRatio);
+    customSize.addEventListener('change', setCanvasRatio);
+
+    imgInput.addEventListener('change', e => {
+      const f = e.target.files?.[0]; if (!f) return;
+      const url = URL.createObjectURL(f);
+      const img = new Image();
+      img.onload = () => {
+        const max = 1800;
+        if (img.width > max || img.height > max) {
+          const scale = max / Math.max(img.width, img.height);
+          const off = document.createElement('canvas');
+          off.width = img.width * scale; off.height = img.height * scale;
+          const octx = off.getContext('2d');
+          octx.drawImage(img, 0, 0, off.width, off.height);
+          const small = new Image();
+          small.onload = () => { userImg = small; offset = { x: 0, y: 0 }; scale = 1; redraw(); };
+          small.src = off.toDataURL('image/jpeg', 0.8);
+        } else {
+          userImg = img; offset = { x: 0, y: 0 }; scale = 1; redraw();
+        }
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    });
+
+    overlaySelect.addEventListener('change', () => {
+      const val = overlaySelect.value;
+      if (!val) { overlayImg = null; redraw(); return; }
+      const img = new Image();
+      img.onload = () => { overlayImg = img; redraw(); };
+      img.src = val;
+    });
+
+    canvas.addEventListener('pointerdown', ev => {
+      dragging = true; last = { x: ev.clientX, y: ev.clientY };
+      canvas.setPointerCapture(ev.pointerId);
+    });
+    canvas.addEventListener('pointermove', ev => {
+      if (!dragging) return;
+      const dx = ev.clientX - last.x, dy = ev.clientY - last.y;
+      last = { x: ev.clientX, y: ev.clientY };
+      offset.x += dx; offset.y += dy; redraw();
+    });
+    canvas.addEventListener('pointerup', ev => {
+      dragging = false; canvas.releasePointerCapture(ev.pointerId);
+    });
+    canvas.addEventListener('wheel', ev => {
+      ev.preventDefault();
+      const f = ev.deltaY < 0 ? 1.05 : 0.95;
+      scale *= f; scale = Math.max(0.3, Math.min(4, scale));
+      redraw();
+    });
+
+    generateBtn.addEventListener('click', () => {
+      if (!userImg) { alert('Upload foto dulu ya!'); return; }
+      const data = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      // a.href=data;a.download='twibbon-result.png';a.click();
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
+      a.href = data;
+      a.download = `twibbon-result_${timestamp}.png`;
+      a.click();
+
+    });
+
+    resetBtn.addEventListener('click', () => {
+      userImg = null; overlayImg = null; offset = { x: 0, y: 0 }; scale = 1;
+      imgInput.value = ''; overlaySelect.value = ''; customSize.value = '';
+      ratioSelect.value = '1'; setCanvasRatio();
+    });
+
+    setCanvasRatio();
+    clearCanvas();
+  </script>
+</body>
+
+</html>
