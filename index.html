@@ -10,14 +10,14 @@
   <div class="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-4xl">
     <div class="flex items-center justify-center mb-6 gap-3">
       <img id="logo" src="assets/logo.png" alt="Logo" class="w-10 h-10 object-contain" />
-      <h1 class="text-2xl font-bold text-gray-800">Twibbon Vocal Group Amoung Hostel</h1>
+      <h1 class="text-2xl font-bold text-gray-800">Twibbon Maker Modern</h1>
     </div>
 
     <p class="text-center text-gray-600 mb-6">Upload foto dari kamera atau file, pilih twibbon dari folder <code>assets/</code>, tentukan rasio atau ukuran, lalu klik <b>Generate</b> untuk hasil akhir.</p>
 
     <div class="flex flex-wrap justify-center gap-3 mb-5">
       <label class="cursor-pointer bg-gray-100 border px-4 py-2 rounded-lg hover:bg-blue-50">
-        <input id="imgInput" type="file" accept="image/*" capture="environment" class="hidden"> Upload / Kamera
+        <input id="imgInput" type="file" accept="image/*" class="hidden"> Upload / Kamera
       </label>
       <select id="overlaySelect" class="border rounded-lg px-4 py-2 text-gray-700">
         <option value="">-- Pilih twibbon dari assets --</option>
@@ -39,7 +39,7 @@
 
     <div>
       <label class="block text-gray-600 mb-2 text-sm">Preview (klik & seret untuk geser, scroll/pinch untuk zoom):</label>
-      <canvas id="canvas" width="1200" height="1200" class="w-full bg-gray-900 rounded-xl"></canvas>
+      <canvas id="canvas" width="800" height="800" class="w-full bg-gray-900 rounded-xl"></canvas>
     </div>
   </div>
 
@@ -70,7 +70,7 @@
 
   function setCanvasRatio(){
     const ratio=eval(ratioSelect.value);
-    const size=parseInt(customSize.value)||1200;
+    const size=parseInt(customSize.value)||800; // ukuran default lebih kecil
     canvas.width=size;
     canvas.height=size/ratio;
     redraw();
@@ -83,7 +83,28 @@
     const f=e.target.files?.[0];if(!f)return;
     const url=URL.createObjectURL(f);
     const img=new Image();
-    img.onload=()=>{userImg=img;offset={x:0,y:0};scale=1;redraw();URL.revokeObjectURL(url);};
+    img.onload=()=>{
+      // Resize gambar biar gak terlalu besar di HP
+      const max = 2000;
+      if (img.width > max || img.height > max) {
+        const scale = max / Math.max(img.width, img.height);
+        const off = document.createElement('canvas');
+        off.width = img.width * scale;
+        off.height = img.height * scale;
+        const octx = off.getContext('2d');
+        octx.drawImage(img, 0, 0, off.width, off.height);
+        const smallImg = new Image();
+        smallImg.onload = () => {
+          userImg = smallImg;
+          offset={x:0,y:0};scale=1;redraw();
+        };
+        smallImg.src = off.toDataURL('image/jpeg', 0.8);
+      } else {
+        userImg = img;
+        offset={x:0,y:0};scale=1;redraw();
+      }
+      URL.revokeObjectURL(url);
+    };
     img.src=url;
   });
 
