@@ -122,7 +122,15 @@
   generateBtn.addEventListener('click',()=>{
     if(!userImg){alert('Upload foto dulu ya!');return;}
     const data=canvas.toDataURL('image/png');
-    const a=document.createElement('a');a.href=data;a.download='twibbon-result.png';a.click();
+    // const a=document.createElement('a');a.href=data;a.download='twibbon-result.png';a.click();
+
+    const a = document.createElement('a');
+const now = new Date();
+const timestamp = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
+a.href = data;
+a.download = `twibbon-result_${timestamp}.png`;
+a.click();
+
   });
 
   resetBtn.addEventListener('click',()=>{userImg=null;overlayImg=null;offset={x:0,y:0};scale=1;imgInput.value='';overlaySelect.value='';customSize.value='';ratioSelect.value='1';setCanvasRatio();});
