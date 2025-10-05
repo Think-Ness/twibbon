@@ -15,7 +15,13 @@
 
     <p class="text-center text-gray-600 mb-6">Upload foto dari kamera atau file, pilih twibbon dari folder <code>assets/</code>, tentukan rasio atau ukuran, lalu klik <b>Generate</b> untuk hasil akhir.</p>
 
-    <div class="flex flex-wrap justify-center gap-3 mb-5">
+    
+    <div>
+        <label class="block text-gray-600 mb-2 text-sm">Preview (klik & seret untuk geser, scroll/pinch untuk zoom):</label>
+        <canvas id="canvas" width="800" height="800" class="w-full bg-gray-900 rounded-xl"></canvas>
+    </div>
+    
+    <div class="flex flex-wrap justify-center gap-3 mt-5">
       <label class="cursor-pointer bg-gray-100 border px-4 py-2 rounded-lg hover:bg-blue-50">
         <input id="imgInput" type="file" accept="image/*" class="hidden"> Upload / Kamera
       </label>
@@ -32,14 +38,9 @@
         <option value="16/9">Rasio 16:9</option>
         <option value="9/16">Rasio 9:16</option>
       </select>
-      <input id="customSize" type="number" placeholder="Ukuran (px)" min="400" max="2000" class="border rounded-lg px-4 py-2 w-32" />
+      <input id="customSize" value="500" type="number" placeholder="Ukuran (px)" min="400" max="2000" class="border rounded-lg px-4 py-2 w-32" />
+      <button id="reset"  class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition">Reset</button>
       <button id="generate" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Generate & Download</button>
-      <button id="reset" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition">Reset</button>
-    </div>
-
-    <div>
-      <label class="block text-gray-600 mb-2 text-sm">Preview (klik & seret untuk geser, scroll/pinch untuk zoom):</label>
-      <canvas id="canvas" width="800" height="800" class="w-full bg-gray-900 rounded-xl"></canvas>
     </div>
   </div>
 
