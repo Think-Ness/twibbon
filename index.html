@@ -19,7 +19,7 @@
     </div>
 
     <p class="text-center text-gray-500 text-sm">
-      Upload foto → pilih twibbon → atur posisi & zoom → klik <b>Generate</b> 🎨
+      Upload foto/video → pilih twibbon → atur posisi & zoom → klik <b>Generate</b> 🎨
     </p>
 
     <!-- Controls -->
@@ -27,7 +27,7 @@
       <label
         class="cursor-pointer bg-slate-100 hover:bg-blue-50 border border-slate-200 text-center py-2 rounded-lg text-sm font-medium transition">
         Upload / Kamera
-        <input id="imgInput" type="file" accept="image/video/*" class="hidden">
+        <input id="imgInput" type="file" accept="image/*,video/*" class="hidden">
       </label>
 
       <select id="overlaySelect"
@@ -47,7 +47,7 @@
         <option value="9/16">9:16</option>
       </select>
 
-      <input id="customSize" type="number" value="500" placeholder="Ukuran (px)" min="400" max="2000"
+      <input id="customSize" type="number"  placeholder="Ukuran (px)" min="400" max="2000"
         class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400" />
 
       <button id="reset"
@@ -60,7 +60,6 @@
     <div class="relative">
       <label class="block text-sm text-gray-600 mb-2">Preview:</label>
       <canvas id="canvas" width="800" height="800" class="w-full bg-slate-900 rounded-xl touch-none"></canvas>
-      <!-- Tombol kecil kontrol manual -->
       <div class="absolute top-2 right-2 flex gap-2">
         <button id="zoomIn" class="bg-white/80 backdrop-blur-sm rounded-full p-2 shadow hover:bg-white">
           ➕
@@ -98,17 +97,21 @@
     const zoomOut = document.getElementById('zoomOut');
     const centerImg = document.getElementById('centerImg');
 
-    function clearCanvas() { ctx.fillStyle = '#111827'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+    function clearCanvas() {
+      ctx.fillStyle = '#111827';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
     function redraw() {
       clearCanvas();
       if (userImg) {
-        const cw = canvas.width, ch = canvas.height, iw = userImg.width, ih = userImg.height;
+        const cw = canvas.width, ch = canvas.height, iw = userImg.videoWidth || userImg.width, ih = userImg.videoHeight || userImg.height;
         const r = Math.max(cw / iw, ch / ih);
         const drawW = iw * r * scale, drawH = ih * r * scale;
         const dx = (cw - drawW) / 2 + offset.x, dy = (ch - drawH) / 2 + offset.y;
         ctx.drawImage(userImg, dx, dy, drawW, drawH);
       }
-      if (overlayImg) { ctx.drawImage(overlayImg, 0, 0, canvas.width, canvas.height); }
+      if (overlayImg) ctx.drawImage(overlayImg, 0, 0, canvas.width, canvas.height);
     }
 
     function setCanvasRatio() {
@@ -122,7 +125,7 @@
     setCanvasRatio();
     clearCanvas();
 
-    // Kalau ada video, render terus
+    // Loop untuk render video
     function loop() {
       if (userImg instanceof HTMLVideoElement && !userImg.paused && !userImg.ended) {
         redraw();
@@ -131,32 +134,8 @@
     }
     loop();
 
-
     ratioSelect.addEventListener('change', setCanvasRatio);
     customSize.addEventListener('change', setCanvasRatio);
-
-    // imgInput.addEventListener('change',e=>{
-    //   const f=e.target.files?.[0];if(!f)return;
-    //   const url=URL.createObjectURL(f);
-    //   const img=new Image();
-    //   img.onload=()=>{
-    //     const max=1800;
-    //     if(img.width>max||img.height>max){
-    //       const scale=max/Math.max(img.width,img.height);
-    //       const off=document.createElement('canvas');
-    //       off.width=img.width*scale;off.height=img.height*scale;
-    //       const octx=off.getContext('2d');
-    //       octx.drawImage(img,0,0,off.width,off.height);
-    //       const small=new Image();
-    //       small.onload=()=>{userImg=small;offset={x:0,y:0};scale=1;redraw();};
-    //       small.src=off.toDataURL('image/jpeg',0.85);
-    //     } else {
-    //       userImg=img;offset={x:0,y:0};scale=1;redraw();
-    //     }
-    //     URL.revokeObjectURL(url);
-    //   };
-    //   img.src=url;
-    // });
 
     imgInput.addEventListener('change', e => {
       const f = e.target.files?.[0];
@@ -165,21 +144,19 @@
       const url = URL.createObjectURL(f);
 
       if (f.type.startsWith('video/')) {
-        // --- handle video ---
         const vid = document.createElement('video');
         vid.src = url;
         vid.autoplay = true;
         vid.loop = true;
-        vid.muted = true; // biar gak bunyi
+        vid.muted = true;
         vid.playsInline = true;
         vid.onloadeddata = () => {
           userImg = vid;
           offset = { x: 0, y: 0 };
           scale = 1;
-          redraw();
+          vid.play();
         };
       } else if (f.type.startsWith('image/')) {
-        // --- handle image ---
         const img = new Image();
         img.onload = () => {
           const max = 1800;
@@ -206,7 +183,6 @@
         alert('Format file tidak didukung 😢');
       }
     });
-
 
     overlaySelect.addEventListener('change', () => {
       const val = overlaySelect.value;
@@ -258,16 +234,15 @@
       }
     });
 
-    // Control buttons
+    // Buttons
     zoomIn.onclick = () => { scale = Math.min(scale * 1.1, 4); redraw(); };
     zoomOut.onclick = () => { scale = Math.max(scale * 0.9, 0.3); redraw(); };
     centerImg.onclick = () => { offset = { x: 0, y: 0 }; redraw(); };
 
     generateBtn.addEventListener('click', () => {
-      if (!userImg) { alert('Upload foto dulu ya!'); return; }
+      if (!userImg) { alert('Upload foto/video dulu ya!'); return; }
       const data = canvas.toDataURL('image/png');
       const a = document.createElement('a');
-      // a.href=data;a.download='twibbon-result.png';a.click();
       const now = new Date();
       const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
       a.href = data;
@@ -277,12 +252,9 @@
 
     resetBtn.addEventListener('click', () => {
       userImg = null; overlayImg = null; offset = { x: 0, y: 0 }; scale = 1;
-      imgInput.value = ''; overlaySelect.value = ''; customSize.value = '500';
+      imgInput.value = ''; overlaySelect.value = ''; customSize.value = '';
       ratioSelect.value = '1'; setCanvasRatio();
     });
-
-    setCanvasRatio();
-    clearCanvas();
   </script>
 </body>
 
