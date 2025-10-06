@@ -59,7 +59,7 @@
       <label
         class="cursor-pointer bg-slate-100 hover:bg-blue-50 border border-slate-200 text-center py-2 rounded-lg text-sm font-medium transition">
         Upload / Camera
-        <input id="imgInput" type="file" accept="image/video" class="hidden">
+        <input id="imgInput" type="file" accept="image,video" class="hidden">
       </label>
 
       <select  id="overlaySelect"
@@ -79,7 +79,7 @@
         <option value="1">1:1</option>
       </select>
 
-      <input id="customSize" type="number"  placeholder="Ukuran (px)" min="400" max="2000"
+      <input id="customSize" type="number" value="3000" placeholder="Ukuran (px)" min="400" max="2000"
         class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400" />
 
       <button id="reset"
