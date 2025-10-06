@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Twibbon Maker</title>
+  <title>Twibbon Live Report</title>
   <meta name="title" content="Vocal Group Competition" />
     <meta name="description"
         content="Guidebook Vocal Group Competition. Temukan informasi lengkap seputar acara, rundown, dan panduan kehadiran di sini." />
@@ -15,7 +15,7 @@
     <meta property="og:url" content="https://think-ness.github.io/twibbon/" />
     <meta property="og:title" content="Vocal Group Competition" />
     <meta property="og:description"
-        content="Twibbon maker Vocal Group Competition." />
+        content="Twibbon Maker Vocal Group Competition." />
     <meta property="og:image"  content="https://drive.google.com/uc?export=view&id=1YUX2PDj-1S9BZruanOwcU4l05lI3ZJ1T" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -25,29 +25,49 @@
 
   <div class="bg-white shadow-xl rounded-2xl p-6 w-full max-w-3xl space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-center gap-3">
-      <img id="logo" src="assets/logo/logo.png" alt="Logo" class="w-10 h-10 object-contain" />
-      <h1 class="text-2xl font-bold">Twibbon Maker Vocal Group Competition</h1>
+
+    <div class="flex items-center text-center justify-center gap-3">
+      <img id="logo" src="assets/logo/logo.png" alt="Logo" class="w-12 h-12 object-contain" />
+      <h1 class="text-2xl font-bold">Twibbon Vocal Group Inter Dormitory</h1>
     </div>
 
     <p class="text-center text-gray-500 text-sm">
-      Upload foto/video → pilih twibbon → atur posisi & zoom → klik <b>Generate</b> 🎨
+      Upload your photo or video, select a twibbon, adjust the position and zoom, then click Generate to download your result.<b>Generate</b> 🎨
     </p>
 
+
+    <!-- Preview -->
+    <div class="relative">
+      <label class="block text-sm text-gray-600 mb-2">Preview:</label>
+      <canvas id="canvas" width="800" height="800" class="w-full bg-slate-900 rounded-xl touch-none"></canvas>
+      <div class="absolute top-2 right-2 flex gap-2">
+        <button id="zoomIn" class="bg-white/80 backdrop-blur-sm rounded-full p-2 shadow hover:bg-white">
+          ➕
+        </button>
+        <button id="zoomOut" class="bg-white/80 backdrop-blur-sm rounded-full p-2 shadow hover:bg-white">
+          ➖
+        </button>
+        <button id="centerImg" class="bg-white/80 backdrop-blur-sm rounded-full p-2 shadow hover:bg-white">
+          🔄️
+        </button>
+      </div>
+    </div>
+
+    
     <!-- Controls -->
     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
       <label
         class="cursor-pointer bg-slate-100 hover:bg-blue-50 border border-slate-200 text-center py-2 rounded-lg text-sm font-medium transition">
-        Upload / Kamera
-        <input id="imgInput" type="file" accept="image/*,video/*" class="hidden">
+        Upload / Camera
+        <input id="imgInput" type="file" accept="image/video" class="hidden">
       </label>
 
-      <select id="overlaySelect"
+      <select  id="overlaySelect"
         class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400">
-        <option value="">Pilih Twibbon</option>
-        <option value="assets/twibbon1.png">Twibbon 1</option>
-        <option value="assets/twibbon2.png">Twibbon 2</option>
-        <option value="assets/twibbon3.png">Twibbon 3</option>
+        <option value="">Select Twibbon</option>
+        <option value="assets/vocalgroup/twibbon1.png" selected>Twibbon 1</option>
+        <!-- <option value="assets/twibbon2.png">Twibbon 2</option>
+        <option value="assets/twibbon3.png">Twibbon 3</option> -->
       </select>
 
       <select id="ratioSelect"
@@ -66,23 +86,6 @@
         class="col-span-2 md:col-span-1 bg-slate-100 hover:bg-slate-200 text-gray-600 py-2 rounded-lg text-sm font-medium transition">
         Reset
       </button>
-    </div>
-
-    <!-- Preview -->
-    <div class="relative">
-      <label class="block text-sm text-gray-600 mb-2">Preview:</label>
-      <canvas id="canvas" width="800" height="800" class="w-full bg-slate-900 rounded-xl touch-none"></canvas>
-      <div class="absolute top-2 right-2 flex gap-2">
-        <button id="zoomIn" class="bg-white/80 backdrop-blur-sm rounded-full p-2 shadow hover:bg-white">
-          ➕
-        </button>
-        <button id="zoomOut" class="bg-white/80 backdrop-blur-sm rounded-full p-2 shadow hover:bg-white">
-          ➖
-        </button>
-        <button id="centerImg" class="bg-white/80 backdrop-blur-sm rounded-full p-2 shadow hover:bg-white">
-          🔄️
-        </button>
-      </div>
     </div>
 
     <!-- Action -->
@@ -136,6 +139,13 @@
 
     setCanvasRatio();
     clearCanvas();
+
+    const defaultOverlay = overlaySelect.value;
+if (defaultOverlay) {
+  const img = new Image();
+  img.onload = () => { overlayImg = img; redraw(); };
+  img.src = defaultOverlay;
+}
 
     // Loop untuk render video
     function loop() {
