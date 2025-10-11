@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Twibbon Live Report</title>
+  <meta name="title" content="Twibbon Laboratorium in EMC 2025" />
+    <meta name="description"
+        content="Guidebook Vocal Group Competition. Temukan informasi lengkap seputar acara, rundown, dan panduan kehadiran di sini." />
+    <meta itemprop="image" content="https://drive.google.com/uc?export=view&id=1YUX2PDj-1S9BZruanOwcU4l05lI3ZJ1T"  />
+    <link rel="icon" type="image/x-icon" href="assets/logo/labkmi.png" />
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://think-ness.github.io/twibbon/" />
+    <meta property="og:title" content="Twibbon Laboratorium in EMC 2025" />
+    <meta property="og:description"
+        content="Upload photo/video → choose twibbon → adjust position & zoom → click Generate." />
+    <meta property="og:image"  content="https://drive.google.com/uc?export=view&id=1YUX2PDj-1S9BZruanOwcU4l05lI3ZJ1T" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body
+  class="bg-gradient-to-br from-slate-100 via-white to-slate-200 min-h-screen flex justify-center items-center font-sans text-gray-800">
+
+  <div class="bg-white shadow-xl rounded-2xl p-6 w-full max-w-3xl space-y-6">
+    <!-- Header -->
+
+    <div class="flex items-center text-center justify-center gap-3">
+      <img id="logo" src="assets/logo/labkmi.png" alt="Logo" class="w-12 h-12 object-contain" />
+      <h1 class="text-2xl font-bold">Twibbon Laboratorium in EMC 2025</h1>
+    </div>
+
+    <p class="text-center text-gray-500 text-sm">
+      Upload your photo or video, select a twibbon, adjust the position and zoom, then click Generate to download your result.<b>Generate</b> 🎨
+    </p>
+
+
+    <!-- Preview -->
+    <div class="relative">
+      <label class="block text-sm text-gray-600 mb-2">Preview:</label>
+      <canvas id="canvas" width="800" height="800" class="w-full bg-slate-900 rounded-xl touch-none"></canvas>
+      <div class="absolute top-2 right-2 flex gap-2">
+        <button id="zoomIn" class="bg-white/80 backdrop-blur-sm rounded-full p-2 shadow hover:bg-white">
+          ➕
+        </button>
+        <button id="zoomOut" class="bg-white/80 backdrop-blur-sm rounded-full p-2 shadow hover:bg-white">
+          ➖
+        </button>
+        <button id="centerImg" class="bg-white/80 backdrop-blur-sm rounded-full p-2 shadow hover:bg-white">
+          🔄️
+        </button>
+      </div>
+    </div>
+
+    
+    <!-- Controls -->
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <label
+        class="cursor-pointer bg-slate-100 hover:bg-blue-50 border border-slate-200 text-center py-2 rounded-lg text-sm font-medium transition">
+        Upload / Camera
+        <input id="imgInput" type="file" accept="image,video" class="hidden">
+      </label>
+
+      <select  id="overlaySelect"
+        class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400">
+        <option value="">Select Twibbon</option>
+        <option value="assets/vocalgroup/twibbon1.png" selected>Twibbon 1</option>
+        <!-- <option value="assets/twibbon2.png">Twibbon 2</option>
+        <option value="assets/twibbon3.png">Twibbon 3</option> -->
+      </select>
+
+      <select id="ratioSelect"
+        class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400">
+        <option value="9/16">9:16</option>
+        <option value="16/9">16:9</option>
+        <option value="3/4">3:4</option>
+        <option value="4/3">4:3</option>
+        <option value="1">1:1</option>
+      </select>
+
+      <input id="customSize" type="number" value="3000" placeholder="Ukuran (px)" min="400" max="2000"
+        class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400" />
+
+      <button id="reset"
+        class="col-span-2 md:col-span-1 bg-slate-100 hover:bg-slate-200 text-gray-600 py-2 rounded-lg text-sm font-medium transition">
+        Reset
+      </button>
+    </div>
+
+    <!-- Action -->
+    <div class="text-center">
+      <button id="generate"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition">
+        Generate & Download
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let userImg = null, overlayImg = null;
+    let offset = { x: 0, y: 0 }, scale = 1, dragging = false, last = { x: 0, y: 0 }, startDist = 0;
+    const imgInput = document.getElementById('imgInput');
+    const overlaySelect = document.getElementById('overlaySelect');
+    const ratioSelect = document.getElementById('ratioSelect');
+    const customSize = document.getElementById('customSize');
+    const generateBtn = document.getElementById('generate');
+    const resetBtn = document.getElementById('reset');
+    const zoomIn = document.getElementById('zoomIn');
+    const zoomOut = document.getElementById('zoomOut');
+    const centerImg = document.getElementById('centerImg');
+
+    function clearCanvas() {
+      ctx.fillStyle = '#111827';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function redraw() {
+      clearCanvas();
+      if (userImg) {
+        const cw = canvas.width, ch = canvas.height, iw = userImg.videoWidth || userImg.width, ih = userImg.videoHeight || userImg.height;
+        const r = Math.max(cw / iw, ch / ih);
+        const drawW = iw * r * scale, drawH = ih * r * scale;
+        const dx = (cw - drawW) / 2 + offset.x, dy = (ch - drawH) / 2 + offset.y;
+        ctx.drawImage(userImg, dx, dy, drawW, drawH);
+      }
+      if (overlayImg) ctx.drawImage(overlayImg, 0, 0, canvas.width, canvas.height);
+    }
+
+    function setCanvasRatio() {
+      const ratio = eval(ratioSelect.value);
+      const size = parseInt(customSize.value) || 800;
+      canvas.width = size;
+      canvas.height = size / ratio;
+      redraw();
+    }
+
+    setCanvasRatio();
+    clearCanvas();
+
+    const defaultOverlay = overlaySelect.value;
+if (defaultOverlay) {
+  const img = new Image();
+  img.onload = () => { overlayImg = img; redraw(); };
+  img.src = defaultOverlay;
+}
+
+    // Loop untuk render video
+    function loop() {
+      if (userImg instanceof HTMLVideoElement && !userImg.paused && !userImg.ended) {
+        redraw();
+      }
+      requestAnimationFrame(loop);
+    }
+    loop();
+
+    ratioSelect.addEventListener('change', setCanvasRatio);
+    customSize.addEventListener('change', setCanvasRatio);
+
+    imgInput.addEventListener('change', e => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+
+      const url = URL.createObjectURL(f);
+
+      if (f.type.startsWith('video/')) {
+        const vid = document.createElement('video');
+        vid.src = url;
+        vid.autoplay = true;
+        vid.loop = true;
+        vid.muted = true;
+        vid.playsInline = true;
+        vid.onloadeddata = () => {
+          userImg = vid;
+          offset = { x: 0, y: 0 };
+          scale = 1;
+          vid.play();
+        };
+      } else if (f.type.startsWith('image/')) {
+        const img = new Image();
+        img.onload = () => {
+          const max = 1800;
+          if (img.width > max || img.height > max) {
+            const scale = max / Math.max(img.width, img.height);
+            const off = document.createElement('canvas');
+            off.width = img.width * scale;
+            off.height = img.height * scale;
+            const octx = off.getContext('2d');
+            octx.drawImage(img, 0, 0, off.width, off.height);
+            const small = new Image();
+            small.onload = () => { userImg = small; offset = { x: 0, y: 0 }; scale = 1; redraw(); };
+            small.src = off.toDataURL('image/jpeg', 0.85);
+          } else {
+            userImg = img;
+            offset = { x: 0, y: 0 };
+            scale = 1;
+            redraw();
+          }
+          URL.revokeObjectURL(url);
+        };
+        img.src = url;
+      } else {
+        alert('Format file tidak didukung 😢');
+      }
+    });
+
+    overlaySelect.addEventListener('change', () => {
+      const val = overlaySelect.value;
+      if (!val) { overlayImg = null; redraw(); return; }
+      const img = new Image();
+      img.onload = () => { overlayImg = img; redraw(); };
+      img.src = val;
+    });
+
+    // Drag & pinch gesture
+    canvas.addEventListener('pointerdown', ev => {
+      dragging = true; last = { x: ev.clientX, y: ev.clientY };
+      canvas.setPointerCapture(ev.pointerId);
+    });
+    canvas.addEventListener('pointermove', ev => {
+      if (!dragging) return;
+      const dx = ev.clientX - last.x, dy = ev.clientY - last.y;
+      last = { x: ev.clientX, y: ev.clientY };
+      offset.x += dx; offset.y += dy; redraw();
+    });
+    canvas.addEventListener('pointerup', ev => {
+      dragging = false; canvas.releasePointerCapture(ev.pointerId);
+    });
+
+    // Zoom scroll
+    canvas.addEventListener('wheel', ev => {
+      ev.preventDefault();
+      const f = ev.deltaY < 0 ? 1.05 : 0.95;
+      scale *= f; scale = Math.max(0.3, Math.min(4, scale));
+      redraw();
+    });
+
+    // Touch pinch zoom
+    canvas.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        startDist = Math.hypot(dx, dy);
+      }
+    });
+    canvas.addEventListener('touchmove', e => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        const factor = dist / startDist;
+        scale *= factor; scale = Math.max(0.3, Math.min(4, scale));
+        startDist = dist; redraw();
+      }
+    });
+
+    // Buttons
+    zoomIn.onclick = () => { scale = Math.min(scale * 1.1, 4); redraw(); };
+    zoomOut.onclick = () => { scale = Math.max(scale * 0.9, 0.3); redraw(); };
+    centerImg.onclick = () => { offset = { x: 0, y: 0 }; redraw(); };
+
+    generateBtn.addEventListener('click', () => {
+      if (!userImg) { alert('Upload foto/video dulu ya!'); return; }
+      const data = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
+      a.href = data;
+      a.download = `twibbon-result_${timestamp}.png`;
+      a.click();
+    });
+
+    resetBtn.addEventListener('click', () => {
+      userImg = null; overlayImg = null; offset = { x: 0, y: 0 }; scale = 1;
+      imgInput.value = ''; overlaySelect.value = ''; customSize.value = '';
+      ratioSelect.value = '1'; setCanvasRatio();
+    });
+  </script>
+</body>
+
+</html>
